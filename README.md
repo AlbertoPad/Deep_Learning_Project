@@ -1,27 +1,83 @@
-# Descripción del Proyecto: MySQL-JSON
-Introducción
-El presente proyecto, disponible en este repositorio de GitHub, es un ejemplo práctico de cómo trabajar con datos JSON en tablas de MySQL. El proyecto está desarrollado en un Jupyter Notebook, que facilita la visualización y ejecución de código Python en celdas interactivas, permitiendo un fácil seguimiento del flujo de trabajo.
+# Pneumonia Image Detection
 
-# Objetivo
-El objetivo principal de este proyecto es demostrar cómo manejar datos en formato JSON dentro de una base de datos MySQL, incluyendo la inserción, consulta, actualización y eliminación de registros. Asimismo, se busca proporcionar una visión clara de las ventajas y posibilidades que ofrece el uso de JSON en MySQL, así como su interacción con lenguaje Python mediante el uso de la biblioteca pymysql.
+This repository contains a code implementation for detecting pneumonia in X-ray images using deep learning techniques. The code processes the input dataset, generates new images, creates and trains a model to classify the images, and evaluates the performance of the model. The code also supports using a pre-trained InceptionV3 model for transfer learning.
 
-# Estructura del Proyecto
-El proyecto consta de varias secciones que abarcan diferentes aspectos del trabajo con JSON en MySQL:
+## Functions
 
-- Importación de bibliotecas y conexión a la base de datos: En esta sección, se importan las bibliotecas necesarias (pymysql, pandas y json) y se establece la conexión con la base de datos MySQL.
+The following functions are implemented in the code:
 
-- Creación de la tabla: Aquí se crea una tabla en la base de datos que incluye una columna específica para almacenar datos JSON.
+- `image_exploration`: Creates a list of tuples containing class, path, and size for each image in the given path.
+- `images_creator`: Generates a specified number of new images, creating a certain number of images for each image in the input list of tuples.
+- `image_generator`: Generates new images from a given image using data augmentation techniques.
+- `format_example`: Returns an image that is reshaped to IMG_SIZE.
+- `dataset_creator`: Creates two lists of tuples with class and formatted image arrays, one for normal images and one for pneumonia images.
+- `dataset_loader`: Loads image data from a list of tuples and returns two arrays, one for images and one for labels.
+- `convert_RGB`: Converts a grayscale image to an RGB image by duplicating the number of channels and pixel values.
 
-- Inserción de datos: Esta parte muestra cómo insertar registros en la tabla, incluyendo la inserción de datos JSON.
+## Usage
 
-- Consulta de datos: En esta sección, se presentan ejemplos de cómo realizar consultas y extraer información específica de los campos JSON almacenados en la tabla.
+1. Set the `dir_images` variable to the directory containing your dataset of X-ray images.
 
-- Actualización de datos: Aquí se muestra cómo actualizar registros que contienen datos JSON en la tabla, utilizando operadores específicos para campos JSON.
+2. Create a list of tuples with class, path, and size for each image in the dataset:
 
-- Eliminación de datos: En esta última sección, se explica cómo eliminar registros que contienen datos JSON en la tabla.
+   ```python
+   images_list = image_exploration(dir_images)
+   ```
 
-# Requisitos
-Para ejecutar este proyecto, es necesario tener instalado Python 3.x, Jupyter Notebook y las bibliotecas pymysql, pandas y json. Además, se requiere acceso a una instancia de MySQL y tener los privilegios necesarios para crear, modificar y eliminar tablas y registros en la base de datos.
+3. Generate new images from the dataset:
 
-# Conclusión
-Este proyecto proporciona una guía completa y fácil de entender para trabajar con datos JSON en tablas de MySQL. Al seguir los ejemplos proporcionados en el Jupyter Notebook, los usuarios podrán aprender cómo realizar operaciones básicas en la base de datos y aprovechar las ventajas que ofrece el formato JSON en MySQL.
+   ```python
+   images_creator(images_list)
+   ```
+
+4. Combine the original images and the newly generated images into a single list, and create a dataset:
+
+   ```python
+   ds_list = images_list + new_images_list
+   ds_NORMAL, ds_PNEUMO = dataset_creator(ds_list)
+   ds_total = ds_NORMAL + ds_PNEUMO
+   ```
+
+5. Load the dataset and split it into training, validation, and test sets:
+
+   ```python
+   X, y = dataset_loader(ds_total)
+   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=val_size, random_state=42)
+   X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=test_size, random_state=42)
+   ```
+
+6. Train and evaluate the custom model:
+
+   ```python
+   # Train the model
+   history = model_PROP.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE)
+
+   # Evaluate the model
+   accuracy_train = model_PROP.history.history['accuracy'][-1]
+   loss0, accuracy_test = model_PROP.evaluate(X_test, y_test)
+
+   print(f'ACC. TEST: {accuracy_test} -- ACC. TRAIN: {accuracy_train} ')
+   ```
+
+7. Train and evaluate the InceptionV3 model:
+
+   ```python
+   # Train the model
+   history = model_V3.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=EPOCHS, batch_size=BATCH_SIZE)
+
+   # Evaluate the model
+   accuracy_train = model_V3.history.history['accuracy'][-1]
+   loss0, accuracy_test = model_V3.evaluate(X_test, y_test)
+
+   print(f'ACC. TEST: {accuracy_test} -- ACC. TRAIN: {accuracy_train} ')
+   ```
+
+## Dependencies
+
+- TensorFlow
+- NumPy
+- OpenCV
+- Pillow
+- Matplotlib
+- tqdm
+- scikit-learn
